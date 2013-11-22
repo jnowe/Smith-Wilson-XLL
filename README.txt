@@ -1,0 +1,1 @@
+This is the Visual Studio 2013 Express Solution that was used in creating the XLL Walkthrough on http://www.altfinsolutions.com/Blog/Transforming-VBA-to-Parallel-CSharp-Code-For-Use-In-Excel
