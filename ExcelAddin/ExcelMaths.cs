@@ -19,7 +19,7 @@ namespace ExcelAddin
             return addedNumbers;
         }
 
-        [ExcelFunction(Name = "GET.SMITH.WILSON.BOND.PRICE.CURVE.PARALLEL.CSHARP", Description = "Returns bond price curve by using the Task Parallel Library")]
+        [ExcelFunction(Name = "GET.SMITH.WILSON.BOND.PRICE.CURVE.PARALLEL.CSHARP", Description = "Returns a bond price curve (as an array) by using the Task Parallel Library")]
         public static double[] SmithWilsonParallelCurve(
             [ExcelArgument(Name = "Inputs", Description = "1st column: bond terms excluding 0. 2nd: bond prices")] double[,] inputs,
             [ExcelArgument(Name = "UFR", Description = "Ultimate forward rate")] double ufr,
@@ -36,129 +36,129 @@ namespace ExcelAddin
             return bondCurve;
         }
 
-        [ExcelFunction(Name = "GET.SMITH.WILSON.BOND.PRICE.CURVE.CSHARP", Description = "Returns bond price curve")]
+        [ExcelFunction(Name = "GET.SMITH.WILSON.BOND.PRICE.CURVE.CSHARP", Description = "Returns bond price curve as an array")]
         public static double[] SmithWilsonCurve(
-            [ExcelArgument(Name = "Inputs", Description = "1st column is bond terms excluded 0. 2nd is bond prices")] double[,] Inputs,
-            [ExcelArgument(Name = "UFR", Description = "Ultimate forward rate")] double UFR,
-            [ExcelArgument(Name = "Tau", Description = "Term of the bond being returned")] double Tau,
-            [ExcelArgument(Name = "Alpha", Description = "Speed of mean reversion")] double a)
+            [ExcelArgument(Name = "Inputs", Description = "1st column is bond terms excluded 0. 2nd is bond prices")] double[,] inputs,
+            [ExcelArgument(Name = "UFR", Description = "Ultimate forward rate")] double ufr,
+            [ExcelArgument(Name = "Tau", Description = "Term of the bond being returned")] double tau,
+            [ExcelArgument(Name = "Alpha", Description = "Speed of mean reversion")] double alpha)
         {
-            var InputsMat = Inputs;
-            var length = InputsMat.GetLength(0);
-            var TimeVec = new double[length];
-            var ZCBVec = new double[length];
-            var UFRVec = new double[length];
-            var ZetaVec = new double[length];
-            var PminusEVec = new double[length];
-            var WMat = new double[length, length];
-            var WinvMat = new double[length, length];
-            var ZetaWVec = new double[length];
-            var ZetaW = 0.0;
-            var ReturnCurve = new double[1620];
+            var inputsMat = inputs;
+            var length = inputsMat.GetLength(0);
+            var timeVec = new double[length];
+            var zcbVec = new double[length];
+            var ufrVec = new double[length];
+            var zetaVec = new double[length];
+            var pMinusEVec = new double[length];
+            var wMat = new double[length, length];
+            var wInvMat = new double[length, length];
+            var zetaWVec = new double[length];
+            var zetaW = 0.0;
+            var returnCurve = new double[1620];
 
-            UFR = Math.Log(1 + UFR);
+            ufr = Math.Log(1 + ufr);
 
             for (int i = 0; i < length; i++)
             {
-                TimeVec[i] = InputsMat[i, 0];
-                ZCBVec[i] = InputsMat[i, 1];
-                UFRVec[i] = Math.Exp(-UFR * TimeVec[i]);
+                timeVec[i] = inputsMat[i, 0];
+                zcbVec[i] = inputsMat[i, 1];
+                ufrVec[i] = Math.Exp(-ufr * timeVec[i]);
             }
 
             for (int i = 0; i < length; i++)
             {
                 for (int j = 0; j < length; j++)
                 {
-                    WMat[i, j] = DoubleYou(TimeVec[i], TimeVec[j], UFR, a);
+                    wMat[i, j] = DoubleYou(timeVec[i], timeVec[j], ufr, alpha);
                 }
             }
 
-            var WMatAsDenseMatrix = DenseMatrix.OfArray(WMat);
-            WinvMat = WMatAsDenseMatrix.Inverse().ToArray();
+            var wMatAsDenseMatrix = DenseMatrix.OfArray(wMat);
+            wInvMat = wMatAsDenseMatrix.Inverse().ToArray();
             for (int i = 0; i < length; i++)
             {
-                PminusEVec[i] = ZCBVec[i] - UFRVec[i];
+                pMinusEVec[i] = zcbVec[i] - ufrVec[i];
             }
 
             for (int i = 0; i < length; i++)
             {
                 for (int j = 0; j < length; j++)
                 {
-                    ZetaVec[i] = ZetaVec[i] + WinvMat[i, j] * PminusEVec[j];
+                    zetaVec[i] = zetaVec[i] + wInvMat[i, j] * pMinusEVec[j];
                 }
             }
             for (int j = 0; j < 1620; j++)
             {
-                Tau = (double)(j+1) / 12d;
-                ZetaW = 0d;
+                tau = (double)(j+1) / 12d;
+                zetaW = 0d;
                 for (int i = 0; i < length; i++)
                 {
-                    ZetaW += ZetaVec[i] * DoubleYou(Tau, TimeVec[i], UFR, a);
+                    zetaW += zetaVec[i] * DoubleYou(tau, timeVec[i], ufr, alpha);
                 }
-                ReturnCurve[j] = Math.Exp(-UFR * Tau) + ZetaW;
+                returnCurve[j] = Math.Exp(-ufr * tau) + zetaW;
             }
 
-            return ReturnCurve;
+            return returnCurve;
         }
         
 
         [ExcelFunction(Name = "GET.SMITH.WILSON.BOND.PRICE.CSHARP", Description = "Returns a single bond price")]
         public static double SmithWilson(
-            [ExcelArgument(Name = "Inputs", Description = "1st column is bond terms excluded 0. 2nd is bond prices")] double[,] Inputs,
-            [ExcelArgument(Name = "UFR", Description = "Ultimate forward rate")] double UFR,
-            [ExcelArgument(Name = "Tau", Description = "Term of the bond being returned")] double Tau,
-            [ExcelArgument(Name = "Alpha", Description = "Speed of mean reversion")] double a)
+            [ExcelArgument(Name = "Inputs", Description = "1st column is bond terms excluded 0. 2nd is bond prices")] double[,] inputs,
+            [ExcelArgument(Name = "UFR", Description = "Ultimate forward rate")] double ufr,
+            [ExcelArgument(Name = "Tau", Description = "Term of the bond being returned")] double tau,
+            [ExcelArgument(Name = "Alpha", Description = "Speed of mean reversion")] double alpha)
         {
-            var InputsMat = Inputs;
-            var length = InputsMat.GetLength(0);
-            var TimeVec = new double[length];
-            var ZCBVec = new double[length];
-            var UFRVec = new double[length];
-            var ZetaVec = new double[length];
-            var PminusEVec = new double[length];
-            var WMat = new double[length, length];
-            var WinvMat = new double[length, length];
-            var ZetaWVec = new double[length];
-            var ZetaW = 0.0;
+            var inputsMat = inputs;
+            var length = inputsMat.GetLength(0);
+            var timeVec = new double[length];
+            var zcbVec = new double[length];
+            var ufrVec = new double[length];
+            var zetaVec = new double[length];
+            var pMinusEVec = new double[length];
+            var wMat = new double[length, length];
+            var wInvMat = new double[length, length];
+            var zetaWVec = new double[length];
+            var zetaW = 0.0;
 
-            UFR = Math.Log(1 + UFR);
+            ufr = Math.Log(1 + ufr);
 
             for (int i = 0; i < length; i++)
             {
-                TimeVec[i] = InputsMat[i, 0];
-                ZCBVec[i] = InputsMat[i, 1];
-                UFRVec[i] = Math.Exp(-UFR * TimeVec[i]);
+                timeVec[i] = inputsMat[i, 0];
+                zcbVec[i] = inputsMat[i, 1];
+                ufrVec[i] = Math.Exp(-ufr * timeVec[i]);
             }
 
             for (int i = 0; i < length; i++)
             {
                 for (int j = 0; j < length; j++)
                 {
-                    WMat[i, j] = DoubleYou(TimeVec[i], TimeVec[j], UFR, a);
+                    wMat[i, j] = DoubleYou(timeVec[i], timeVec[j], ufr, alpha);
                 }
             }
 
-            var WMatAsDenseMatrix = DenseMatrix.OfArray(WMat);
-            WinvMat = WMatAsDenseMatrix.Inverse().ToArray();
+            var wMatAsDenseMatrix = DenseMatrix.OfArray(wMat);
+            wInvMat = wMatAsDenseMatrix.Inverse().ToArray();
             for (int i = 0; i < length; i++)
             {
-                PminusEVec[i] = ZCBVec[i] - UFRVec[i];
+                pMinusEVec[i] = zcbVec[i] - ufrVec[i];
             }
 
             for (int i = 0; i < length; i++)
             {
                 for (int j = 0; j < length; j++)
                 {
-                    ZetaVec[i] = ZetaVec[i] + WinvMat[i, j] * PminusEVec[j];
+                    zetaVec[i] = zetaVec[i] + wInvMat[i, j] * pMinusEVec[j];
                 }
             }
 
             for (int i = 0; i < length; i++)
             {
-                ZetaW += ZetaVec[i] * DoubleYou(Tau, TimeVec[i], UFR, a);
+                zetaW += zetaVec[i] * DoubleYou(tau, timeVec[i], ufr, alpha);
             }
 
-            return Math.Exp(-UFR * Tau) + ZetaW;
+            return Math.Exp(-ufr * tau) + zetaW;
         }
 
         private static double DoubleYou(double tau, double you, double ufr, double a)
