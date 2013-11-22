@@ -1,1 +1,1 @@
-This is the Visual Studio 2013 Express Solution that was used in creating the XLL Walkthrough on http://www.altfinsolutions.com/Blog/Transforming-VBA-to-Parallel-CSharp-Code-For-Use-In-Excel
+This is the Visual Studio 2013 Express Solution that was used in creating the XLL Walkthrough on http://www.altfinsolutions.com/Blog/Transforming-VBA-to-Parallel-CSharp-Code-For-Use-In-Excel. To use, right click the file ExcelAddin.sln in the main folder and open with Visual Studio 2013 Express (or other version if you have one installed)
